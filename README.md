@@ -54,12 +54,7 @@ The API validates incoming requests and returns appropriate HTTP status codes.
 ### Clone the repository
 
 ```bash
-git clone https://github.com/matt7869/apex-devops-assessment.git
-cd apex-devops-assessment
-```
-
-### Configure environment variables
-
+git clone https://github.com/matt7869/apex-devops-assessmen
 Create a local `.env` file:
 
 ```bash
@@ -181,3 +176,47 @@ No production Apex infrastructure or real customer data was used. Production mon
 ## 12. AI Assistance Disclosure
 
 AI assistance was used for technical explanations, troubleshooting guidance, documentation support, and review of implementation decisions. Commands, configuration, application behavior, and test results were checked in the local development environment by the project author.
+## Versioned Release and Rollback Demonstration
+
+### Release versions
+
+Two Docker images were built locally:
+
+- `apex-operations-api:v1` — the original API release.
+- `apex-operations-api:v2` — an updated release that introduces the `/version` endpoint.
+
+### Deploying v2
+
+The Compose configuration was updated to use `apex-operations-api:v2`, and the API container was recreated.
+
+The following checks were successful:
+
+- `/health` — API returned a healthy response.
+- `/ready` — API confirmed database connectivity.
+- `/version` — returned `{"version":"2.0.0"}`.
+
+### Rolling back to v1
+
+The Compose configuration was switched back to `apex-operations-api:v1`, and the API container was recreated using:
+
+```bash
+docker compose up -d --force-recreate api
+```
+
+### Rollback verification
+
+After rollback, the following results were observed:
+
+| Check | Result |
+|---|---|
+| Running API image | `apex-operations-api:v1` |
+| `/ready` | `{"status":"ready"}` |
+| `/version` | HTTP 404 — expected because this endpoint is not present in v1 |
+| `/operations` | Previously stored operation record returned successfully |
+| PostgreSQL | Container healthy |
+
+### Outcome
+
+The rollback successfully restored the previous API image. The PostgreSQL database remained available, and the existing operation record was preserved.
+
+This demonstrates a basic versioned release and rollback process using Docker images and Docker Compose, with persistent database storage maintained independently of the API container.
